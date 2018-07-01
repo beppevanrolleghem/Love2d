@@ -11,6 +11,20 @@ nStraal = 0
 
 
 
+--- shaders ...
+
+local shader_code = [[
+  extern number eff;
+  vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+    vec4 pixel = Texel(texture, texture_coords); // this is the current pixel color
+    number average = (pixel.r + pixel.b + pixel.g) / 3.0;
+    pixel.r = pixel.r + (average-pixel.r) *eff;
+    pixel.g = pixel.g + (average-pixel.g) *eff;
+    pixel.b = pixel.b + (average-pixel.b) *eff;
+    return pixel * color;
+  }
+]]
+
 
 
 --- objects ...
@@ -110,6 +124,7 @@ balls = {
 
 --loadVars
 function love.load()
+  firstshader = love.graphics.newShader(shader_code)
   r = 1
   g = 1
   b = 1
@@ -142,6 +157,7 @@ end
 
 --- updateVars
 function love.update(dt)
+  print("FRAME")
   player.physics:Update()
   x = x + 1
   if (x > wwidth) then
@@ -152,8 +168,9 @@ function love.update(dt)
   g = math.sin((bdt / 10) * math.pi)
   b = math.cos((bdt / 100)* math.pi)
   balls:update(bdt, nStraal)
+  firstshader:send("eff", math.sin((love.mouse.getX()+love.mouse.getY()) * math.pi))
   bdt = bdt + dt
-  print(bdt)
+  --print(bdt)
   ---[[
   ---[[print("r: "..r)
 ---[[  print("g: "..g)
@@ -176,12 +193,17 @@ function love.update(dt)
   end
 end
 
-
-
+function love.keypressed( key )
+  print("key "..key.." has been pressed")
+  if key == "escape" then
+    love.event.quit(1)
+  end
+end
 
 
 ---darwFunction
 function love.draw()
+  love.graphics.setShader(firstshader)
   love.graphics.setBlendMode("alpha", "premultiplied")
 
   --print("height = " .. wheight .. "\nwidth = " .. wwidth .. "\nx = " .. x .. "\ny = " .. y .. "\nframes: " .. bdt)
